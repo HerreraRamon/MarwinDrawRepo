@@ -1,0 +1,188 @@
+package programa;
+
+import java_cup.runtime.Symbol;
+import java.util.HashMap;
+import java.io.*;
+import programa.TablaSimbolos.*;
+import programa.TablaSimbolos.Simbolo;
+parser code
+{:
+    
+
+    private Symbol s;
+    
+    public void syntax_error(Symbol s){
+        this.s = s;
+        Pantalla.algo("Error de sintaxis:   " +s.value+ " Linea:    " +(s.right+1));
+    }
+
+    public Symbol getS(){
+        
+        return this.s;
+    }
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{
+        this.s = s;
+        Pantalla.algo("Error R de sintaxis: " +s.value+ "Linea :" + (s.left+1)+ "Columna: " +(s.right+1));
+    }
+
+:};
+action code {:
+    private TablaSimbolos tabla= new TablaSimbolos();
+    
+:};
+
+terminal String Numero , Identificador, T_dato,Int, Cadena;
+terminal Linea, Comillas, If, Else, For,
+    Igual, Suma, Resta, Multiplicacion, Division, Op_logico, Op_relacional,
+    Op_atribucion, Op_incremento, Op_booleano, Parentesis_a, Parentesis_c,
+    Llave_a, Llave_c, Corchete_a, Corchete_c, Main,Squa,Tria,Circ,Trazar,Index,
+    Move,Rotate,Resize,Link,Draw,Funcion,All, P_coma, 
+    Array,Table, ERROR;
+
+non terminal INICIO, SENTENCIA, DECLARACION, DECLARACION_FOR, IF, IF_ELSE,
+    FOR, SENTENCIA_BOOLEANA, SENTENCIA_FOR, FIGURE,FIG, VALOR,
+    IND, ARREGLO, MANIPULATE,MAN,FUNCION, PARAM, TABLE, UNIR, OBJETO,
+    EXPRESION, OPERADOR, ERRORES;
+
+start with INICIO;
+
+INICIO ::= 
+    Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c 
+    {: tabla.imprimir(); :} |
+    Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c FUNCION|
+    Int Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c FUNCION
+;
+SENTENCIA ::= 
+    SENTENCIA DECLARACION |
+    DECLARACION |
+    SENTENCIA IF | 
+    IF |
+    SENTENCIA IF_ELSE |
+    IF_ELSE |
+    SENTENCIA FOR |
+    FOR |
+    SENTENCIA FIGURE |
+    FIGURE |
+    SENTENCIA IND|
+    IND |
+    SENTENCIA MANIPULATE|
+    MANIPULATE |
+    SENTENCIA TABLE |
+    TABLE |
+    error P_coma |
+    error Llave_c
+;
+
+DECLARACION ::= 
+    T_dato Identificador:e P_coma 
+        {: :}| 
+ 
+    T_dato:t Identificador:e Op_atribucion Numero:n P_coma 
+        {:  Simbolo si;
+            if ((si = tabla.getSymbol(e)) == null)tabla.addSymbol(e,t,n);
+            
+  :}|
+
+
+
+    T_dato:t Identificador:e Igual Numero:n P_coma 
+    {:  Simbolo si;
+            if ((si = tabla.getSymbol(e)) == null)tabla.addSymbol(e,t,n);
+            
+    :}|
+    T_dato Identificador Op_incremento P_coma | 
+    T_dato Op_incremento Identificador P_coma | 
+    Cadena Identificador Op_atribucion Comillas Comillas P_coma |
+    Cadena Identificador Igual Comillas Comillas P_coma |
+    Cadena Identificador Op_atribucion Comillas Identificador Comillas P_coma |
+    Cadena Identificador Igual Comillas Identificador Comillas P_coma  |
+    Array T_dato Identificador Igual Corchete_a ARREGLO Corchete_c P_coma|
+    Funcion Identificador Parentesis_a Parentesis_c P_coma  |
+    Funcion Identificador Parentesis_a VALOR Parentesis_c P_coma  
+;
+IF ::= If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c
+;
+SENTENCIA_BOOLEANA ::= 
+    Op_booleano | 
+    Identificador Op_relacional Op_booleano |
+    Identificador Op_relacional Numero |
+    Identificador Op_relacional Identificador |
+    Identificador Op_relacional Comillas Comillas |
+    Identificador Op_relacional Comillas Identificador Comillas
+;
+IF_ELSE ::= If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c Else Llave_a SENTENCIA Llave_c
+;
+FOR ::= For Parentesis_a SENTENCIA_FOR Parentesis_c Llave_a SENTENCIA Llave_c
+;
+SENTENCIA_FOR ::=
+    T_dato Identificador Igual Numero P_coma SENTENCIA_BOOLEANA P_coma DECLARACION_FOR |
+    Identificador Igual Numero P_coma SENTENCIA_BOOLEANA P_coma DECLARACION_FOR
+;
+FIGURE ::=
+    T_dato Identificador Igual FIG Parentesis_a VALOR P_coma VALOR P_coma VALOR P_coma VALOR Parentesis_c P_coma
+;
+
+DECLARACION_FOR ::= 
+    Identificador Op_atribucion Numero |
+    Identificador Op_incremento | 
+    Op_incremento Identificador
+;
+
+VALOR ::=
+    Identificador | Numero
+;
+FIG::=
+    Squa | Tria | Circ | Trazar
+;
+
+IND::=
+    Index Parentesis_a VALOR P_coma VALOR Parentesis_c P_coma
+;
+
+ARREGLO::=
+    Identificador P_coma ARREGLO| Identificador
+;
+
+MANIPULATE::=
+    MAN Parentesis_a VALOR P_coma VALOR P_coma VALOR Parentesis_c P_coma |
+    Rotate Parentesis_a VALOR P_coma VALOR Parentesis_c P_coma |
+    MAN  Parentesis_a All P_coma VALOR P_coma VALOR Parentesis_c P_coma |
+    Rotate Parentesis_a All P_coma VALOR Parentesis_c P_coma 
+;
+UNIR ::=
+    Link Parentesis_a OBJETO Parentesis_c
+;
+OBJETO::=
+    Identificador P_coma |Identificador
+;
+MAN::=
+    Move | Draw| Resize
+;
+FUNCION::=
+    Identificador Parentesis_a PARAM Parentesis_c Llave_a SENTENCIA Llave_c |
+    Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c
+;
+
+PARAM ::=
+    T_dato Identificador PARAM| T_dato Identificador
+;
+
+TABLE::=
+    Table Parentesis_a VALOR P_coma VALOR Parentesis_c P_coma
+;
+EXPRESION::= Identificador OPERADOR Identificador;
+OPERADOR::= Igual |Suma | Resta | Multiplicacion| Division;
+ERRORES::=
+DECLARACION
+|IF 
+|FOR
+|IF_ELSE
+|FIGURE
+|IND
+|MANIPULATE
+|TABLE
+|error P_coma
+|error Llave_c
+;
+
+    

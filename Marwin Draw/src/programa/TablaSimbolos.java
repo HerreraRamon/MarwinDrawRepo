@@ -19,7 +19,7 @@ public class TablaSimbolos {
         Iterator it = table.values().iterator();
         while(it.hasNext()){
             Simbolo s = (Simbolo)it.next();
-            System.out.println(s.name + "=  valor: "+ s.value+"  tipo: "+s.type+" chetos");
+            System.out.println(s.name + "=  valor: "+ s.value+"  tipo: "+s.type);
         }
         //System.out.println("aqui el problema");
     }
@@ -29,6 +29,9 @@ public class TablaSimbolos {
     }
 
     public Simbolo getSymbol(String name) {
+        return table.get(name);
+    }
+    public Simbolo getType(String name) {
         return table.get(name);
     }
 

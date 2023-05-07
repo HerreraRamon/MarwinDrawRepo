@@ -13,18 +13,16 @@ parser code
     
     public void syntax_error(Symbol s){
         this.s = s;
-        Pantalla.algo("Error de sintaxis:   " +s.value+ " Linea:    " +(s.right+1));
+        Pantalla.algo("Error de sintaxis. El error se encuentra en: " +s.value+ " Linea:    " +(s.right+1));
     }
 
     public Symbol getS(){
         
         return this.s;
     }
-    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{
+        public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{
         this.s = s;
-        Pantalla.algo("Error R de sintaxis: " +s.value+ "Linea :" + (s.left+1)+ "Columna: " +(s.right+1));
-    }
-
+        Pantalla.algo("Error R de sintaxis. El error se encuentra en: " +s.value+ "Linea:   " + (s.left+1));}
 :};
 action code {:
     private TablaSimbolos tabla= new TablaSimbolos();
@@ -74,29 +72,32 @@ SENTENCIA ::=
 ;
 
 DECLARACION ::= 
-    T_dato Identificador:e P_coma 
-        {: :}| 
- 
-    T_dato:t Identificador:e Op_atribucion Numero:n P_coma 
-        {:  Simbolo si;
-            if ((si = tabla.getSymbol(e)) == null)tabla.addSymbol(e,t,n);
-            
-  :}|
-
-
-
+    T_dato:t Identificador:e P_coma 
+    {:  Simbolo si;
+        if ((si = tabla.getSymbol(e)) == null)tabla.addSymbol(e,t,"");
+        else Pantalla.errorSemantico("Error de semantica ya existe la variable "+e);    
+    :}|
     T_dato:t Identificador:e Igual Numero:n P_coma 
     {:  Simbolo si;
-            if ((si = tabla.getSymbol(e)) == null)tabla.addSymbol(e,t,n);
-            
+        if ((si = tabla.getSymbol(e)) == null)tabla.addSymbol(e,t,n);
+        else Pantalla.errorSemantico("Error de semantica ya existe la variable "+e);    
     :}|
-    T_dato Identificador Op_incremento P_coma | 
-    T_dato Op_incremento Identificador P_coma | 
-    Cadena Identificador Op_atribucion Comillas Comillas P_coma |
-    Cadena Identificador Igual Comillas Comillas P_coma |
-    Cadena Identificador Op_atribucion Comillas Identificador Comillas P_coma |
-    Cadena Identificador Igual Comillas Identificador Comillas P_coma  |
-    Array T_dato Identificador Igual Corchete_a ARREGLO Corchete_c P_coma|
+
+    Cadena:t Identificador:e Igual Comillas Comillas P_coma   
+    {:  Simbolo si;
+        if ((si = tabla.getSymbol(e)) == null)tabla.addSymbol(e,t,"");
+        else Pantalla.errorSemantico("Error de semantica ya existe la variable "+e);    
+    :}|
+    Cadena:t Identificador:e Igual Comillas Identificador:n Comillas P_coma     
+    {:  Simbolo si;
+        if ((si = tabla.getSymbol(e)) == null)tabla.addSymbol(e,t,n);
+        else Pantalla.errorSemantico("Error de semantica ya existe la variable "+e);    
+    :}|
+    Array T_dato:t Identificador:e Igual Corchete_a ARREGLO Corchete_c P_coma     
+    {:  Simbolo si;
+        if ((si = tabla.getSymbol(e)) == null)tabla.addSymbol(e,t,"");
+        else Pantalla.errorSemantico("Error de semantica ya existe la variable "+e);    
+    :}|
     Funcion Identificador Parentesis_a Parentesis_c P_coma  |
     Funcion Identificador Parentesis_a VALOR Parentesis_c P_coma  
 ;
@@ -104,10 +105,24 @@ IF ::= If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c
 ;
 SENTENCIA_BOOLEANA ::= 
     Op_booleano | 
-    Identificador Op_relacional Op_booleano |
-    Identificador Op_relacional Numero |
-    Identificador Op_relacional Identificador |
-    Identificador Op_relacional Comillas Comillas |
+    Identificador:id Op_relacional Op_booleano 
+    {: Simbolo si;
+        if ((si = tabla.getSymbol(id)) == null)Pantalla.errorSemantico("Error de semantica no existe la variable "+id);
+             :} |
+    Identificador:id Op_relacional Numero:n 
+    {: Simbolo si;
+        if ((si = tabla.getSymbol(id)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+id);
+    :} |
+    Identificador:e1 Op_relacional Identificador:e2  
+    {: Simbolo si;
+        if ((si = tabla.getSymbol(e1)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+e1);
+        if ((si = tabla.getSymbol(e2)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+e2);
+
+    :} |
+    Identificador:id Op_relacional Comillas Comillas  
+    {: Simbolo si;
+        if ((si = tabla.getSymbol(id)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+id);
+    :} |
     Identificador Op_relacional Comillas Identificador Comillas
 ;
 IF_ELSE ::= If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c Else Llave_a SENTENCIA Llave_c
@@ -115,21 +130,50 @@ IF_ELSE ::= If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Ll
 FOR ::= For Parentesis_a SENTENCIA_FOR Parentesis_c Llave_a SENTENCIA Llave_c
 ;
 SENTENCIA_FOR ::=
-    T_dato Identificador Igual Numero P_coma SENTENCIA_BOOLEANA P_coma DECLARACION_FOR |
-    Identificador Igual Numero P_coma SENTENCIA_BOOLEANA P_coma DECLARACION_FOR
+    T_dato:t Identificador:e Igual Numero:n P_coma SENTENCIA_BOOLEANA P_coma DECLARACION_FOR 
+    {:
+        Simbolo si;
+        if ((si = tabla.getSymbol(e)) == null)tabla.addSymbol(e,t,n);
+        else Pantalla.errorSemantico("Error de semantica ya existe la variable "+e);
+        
+    :}
+    |
+    Identificador:id Igual Numero P_coma SENTENCIA_BOOLEANA P_coma DECLARACION_FOR
+    {: Simbolo si;
+        if ((si = tabla.getSymbol(id)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+id);
+    :}
 ;
 FIGURE ::=
-    T_dato Identificador Igual FIG Parentesis_a VALOR P_coma VALOR P_coma VALOR P_coma VALOR Parentesis_c P_coma
+    T_dato:t Identificador:e Igual FIG Parentesis_a VALOR P_coma VALOR P_coma VALOR P_coma VALOR Parentesis_c P_coma
+    {:
+        Simbolo si;
+        if ((si = tabla.getSymbol(e)) == null)tabla.addSymbol(e,t,"");
+        else Pantalla.errorSemantico("Error de semantica ya existe la variable "+e);
+        
+    :}
 ;
 
 DECLARACION_FOR ::= 
-    Identificador Op_atribucion Numero |
-    Identificador Op_incremento | 
-    Op_incremento Identificador
+    Identificador:id Op_atribucion Numero 
+        {: Simbolo si;
+        if ((si = tabla.getSymbol(id)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+id);
+    :}|
+    Identificador:id Op_incremento 
+    {: Simbolo si;
+        if ((si = tabla.getSymbol(id)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+id);
+    :}| 
+    Op_incremento Identificador:id 
+    {: Simbolo si;
+        if ((si = tabla.getSymbol(id)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+id);
+    :}| 
 ;
 
 VALOR ::=
-    Identificador | Numero
+    Identificador:id  
+    {: Simbolo si;
+        if ((si = tabla.getSymbol(id)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+id);
+    :}| 
+     Numero
 ;
 FIG::=
     Squa | Tria | Circ | Trazar
@@ -140,7 +184,13 @@ IND::=
 ;
 
 ARREGLO::=
-    Identificador P_coma ARREGLO| Identificador
+    Identificador:id P_coma ARREGLO     
+    {: Simbolo si;
+        if ((si = tabla.getSymbol(id)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+id);
+    :}| Identificador:id
+    {: Simbolo si;
+        if ((si = tabla.getSymbol(id)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+id);
+    :}| 
 ;
 
 MANIPULATE::=
@@ -153,7 +203,13 @@ UNIR ::=
     Link Parentesis_a OBJETO Parentesis_c
 ;
 OBJETO::=
-    Identificador P_coma |Identificador
+    Identificador:id P_coma  
+    {: Simbolo si;
+        if ((si = tabla.getSymbol(id)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+id);
+    :}| Identificador:id 
+    {: Simbolo si;
+        if ((si = tabla.getSymbol(id)) == null)Pantalla.errorSemantico("Error de semantica no existe  la variable "+id);
+    :}
 ;
 MAN::=
     Move | Draw| Resize
